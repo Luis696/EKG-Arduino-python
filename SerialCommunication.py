@@ -1,17 +1,10 @@
-import numpy as np
-import serial
 import struct
 import time
 
-ser = serial.Serial("COM4", 115200, stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)  # configure Serial Port
-
-if not ser.isOpen():  # check if serial port is open
-    ser.open()
-
-print("OPEN Serial\n")  # confirm to user that serial Port is open
+import numpy as np
 
 
-def read_serial_data(number_of_byte_packages_per_bus):
+def read_serial_data(number_of_byte_packages_per_bus, serial_connection):
     """reads serial data from an arduino byte stream, number of Sensor values sent = number_of_packages
         performs task only ones
         returns array of length number_of_packages as type(float)"""
@@ -19,7 +12,7 @@ def read_serial_data(number_of_byte_packages_per_bus):
     read = True
 
     while read:  # start reading for the data stream
-        incoming_byte.append(ser.read(4))  # read byte sized packages from the stream
+        incoming_byte.append(serial_connection.read(4))  # read byte sized packages from the stream
 
         if incoming_byte[-1].__len__() > 0:  # checks if incoming incoming_byte is available
 
@@ -34,7 +27,7 @@ def read_serial_data(number_of_byte_packages_per_bus):
             read = False  # and stop program
 
 
-def measure_serial_speed(measure_time_in_seconds, number_of_byte_packages_per_bus):
+def measure_serial_speed(measure_time_in_seconds, number_of_byte_packages_per_bus, serial_connection):
     print("READ DATA\n")
     start_measuring = time.time()
     incoming_byte = []
@@ -48,10 +41,10 @@ def measure_serial_speed(measure_time_in_seconds, number_of_byte_packages_per_bu
             bus_start_time = time.time()
             first_run = False
 
-        incoming_byte.append(ser.read(4))
+        incoming_byte.append(serial_connection.read(4))
 
         if incoming_byte[-1].__len__() > 0:  # checks if incoming incoming_byte is available
-            print('\rData is incoming.', end='', flush=True)  # confirm incoming data for user
+            print('\rData is incoming. Evaluate Serial speed...', end='', flush=True)  # confirm incoming data for user
 
             if incoming_byte.__len__() >= number_of_byte_packages_per_bus:
                 values = [struct.unpack("f", bytes(incoming_byte[x]))[0] for x in
@@ -64,8 +57,8 @@ def measure_serial_speed(measure_time_in_seconds, number_of_byte_packages_per_bu
                     start_measuring + measure_time_in_seconds):  # waits until measuring time is done to print data
                 read = False
                 time_per_package_bus = np.mean(time_per_bus, axis=0)  # takes the average of the time one bus needs
-                print("\rthe mean time for one bus of {number_of_packages:.2f} packegs in {measure_time:.2f} seconds was = {time_per_package:.4f} seconds"
-                      .format(number_of_packages=number_of_byte_packages_per_bus, measure_time=measure_time_in_seconds, time_per_package=time_per_package_bus))
+                print("\rthe mean time for one bus of {number_of_packages:.2f} packegs in {measure_time:.2f} seconds was = {time_per_package_bus:.4f} seconds"
+                      .format(number_of_packages=number_of_byte_packages_per_bus, measure_time=measure_time_in_seconds, time_per_package_bus=time_per_package_bus))
                 print("transmission time: {packages_per_second:.2f} buses/second, equals {packages_per_second:.2f} Hz"
                       .format(packages_per_second=1 / time_per_package_bus))
                 print(f"measuring for {number_of_byte_packages_per_bus} packages as one bus finished"
