@@ -68,3 +68,31 @@ def measure_serial_speed(measure_time_in_seconds, number_of_byte_packages_per_bu
             print("No Data incoming\r")  # else give feedback to user
             read = False  # and stop program
 
+
+# suggestions from the AI to measure the speed
+def measure_frequency(serial_port):
+    # Initialize variables to track the time and frequency
+    previous_time = None
+    frequency = 0
+
+    # Continuously read data from the serial port
+    while True:
+        # Read 4 bytes from the serial port
+        data = serial_port.read(4)
+
+        # If there is data, measure the frequency
+        if data:
+            # Get the current time
+            current_time = time.time()
+
+            # If this is the first data point, set the previous time
+            if previous_time is None:
+                previous_time = current_time
+
+            # If enough time has passed, update the frequency
+            elif current_time - previous_time >= 1:
+                frequency = 1 / (current_time - previous_time)
+                previous_time = current_time
+
+            # Print the frequency
+            print(f'Frequency: {frequency} Hz')
